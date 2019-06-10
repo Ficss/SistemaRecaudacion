@@ -1,4 +1,5 @@
 ﻿using ComponentFactory.Krypton.Toolkit;
+using Squirrel;
 using System;
 using System.Configuration;
 using System.Data;
@@ -19,12 +20,76 @@ namespace SR
             InitializeComponent();
         }
         #endregion
+        #region Método de verificación de actualizaciones
+        private async void CheckForUpdate()
+        {
+            try
+            {
+                using (var mgr = await UpdateManager.GitHubUpdateManager("https://github.com/Ficss/SistemaRecaudacion"))
+                {
+                    try
+                    {
+                        var updateInfo = await mgr.CheckForUpdate();
+                        if (updateInfo.ReleasesToApply.Any())
+                        {
+                            var versionCount = updateInfo.ReleasesToApply.Count;
+                            MessageBox.Show($"{versionCount} actualización encontrada");
+                            var versionWord = versionCount > 1 ? "versiones" : "version";
+                            var message = new StringBuilder().AppendLine($"La aplicación está {versionCount} {versionWord} detrás.").
+                                                              AppendLine("Si elige actualizar, los cambios no tomarán efectos hasta que la aplicación no sea reiniciada.").
+                                                              AppendLine("¿Desea descargar e instalar la actualización?").
+                                                              AppendLine("Ante cualquier duda llamar al anexo 219 o 220").
+                                                              ToString();
+                            var result = MessageBox.Show(message, "¿Actualizar Aplicación?", MessageBoxButtons.YesNo);
+                            if (result != DialogResult.Yes)
+                            {
+                                notificacion("Actualización rechazada por el usuario");
+                                return;
+                            }
+                            notificacion("Descargando actualización");
+                            var updateResult = await mgr.UpdateApp();
+
+                            notificacion($"Descarga completa. Versión {updateResult.Version} tomará efecto cuando la aplicación sea reiniciada.");
+                        }
+                        else
+                        {
+                            notificacionInicio.BalloonTipIcon = ToolTipIcon.Info;
+                            notificacionInicio.BalloonTipTitle = "Carta de morosidad";
+                            notificacionInicio.BalloonTipText = "No hay actualizaciones pendientes";
+                            notificacionInicio.ShowBalloonTip(5000);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        notificacionInicio.BalloonTipIcon = ToolTipIcon.Warning;
+                        notificacionInicio.BalloonTipTitle = "Carta de morosidad";
+                        notificacionInicio.BalloonTipText = $"¡Hubo un problema durante el proceso de actualización! {ex.Message}";
+                        notificacionInicio.ShowBalloonTip(5000);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message + Environment.NewLine;
+                if (ex.InnerException != null)
+                    message += ex.InnerException.Message;
+                MessageBox.Show(message);
+            }
+        }
+        #endregion
         #region Método load
         private void LibroVentas_Load(object sender, EventArgs e)
         {
-            kryptonPage2.Enabled = false;
-            kryptonPage5.Enabled = false;
-            btnSiguiente.Enabled = false;
+            try
+            {
+                CheckForUpdate();
+                kryptonPage2.Enabled = false;
+                kryptonPage5.Enabled = false;
+                btnSiguiente.Enabled = false;
+            }catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         #endregion
         #region Recuperar Datos de Servicios Facturados
@@ -473,7 +538,6 @@ namespace SR
                 string cuenta = "2-1-03-01-01";
                 string mes = dtpFinal.Value.ToString("MMMM").ToUpper();
                 string year = dtpFinal.Value.Year.ToString();
-                string text = null;
                 string iva = null;
                 string con = ConfigurationManager.ConnectionStrings["SR"].ConnectionString;
                 using (OdbcConnection connection = new OdbcConnection(con))
@@ -923,5 +987,31 @@ namespace SR
             }
         }
         #endregion
+        #region Inicialización de notificación
+        public void notificacion(string mensaje)
+        {
+            notificacionInicio.BalloonTipIcon = ToolTipIcon.Info;
+            notificacionInicio.BalloonTipTitle = "Actualización Disponible";
+            notificacionInicio.BalloonTipText = mensaje;
+            notificacionInicio.ShowBalloonTip(5000);
+        }
+        #endregion
+        #region Comprobar Actualizaciones
+        private void comprobarActualizacionesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                CheckForUpdate();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+        #endregion
+        #region Cerrar programa desde ícono de notificación
+        private void salirToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+        #endregion
+
     }
 }
