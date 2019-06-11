@@ -54,7 +54,7 @@ namespace SR
                         else
                         {
                             notificacionInicio.BalloonTipIcon = ToolTipIcon.Info;
-                            notificacionInicio.BalloonTipTitle = "Carta de morosidad";
+                            notificacionInicio.BalloonTipTitle = "Libro de ventas";
                             notificacionInicio.BalloonTipText = "No hay actualizaciones pendientes";
                             notificacionInicio.ShowBalloonTip(5000);
                         }
@@ -62,7 +62,7 @@ namespace SR
                     catch (Exception ex)
                     {
                         notificacionInicio.BalloonTipIcon = ToolTipIcon.Warning;
-                        notificacionInicio.BalloonTipTitle = "Carta de morosidad";
+                        notificacionInicio.BalloonTipTitle = "Libro de ventas";
                         notificacionInicio.BalloonTipText = $"¡Hubo un problema durante el proceso de actualización! {ex.Message}";
                         notificacionInicio.ShowBalloonTip(5000);
                     }
@@ -170,7 +170,7 @@ namespace SR
                 string con = ConfigurationManager.ConnectionStrings["SR"].ConnectionString;
                 using (OdbcConnection connection = new OdbcConnection(con))
                 {
-                    using (OdbcCommand cmd = new OdbcCommand("select FOLIO=m.num_e,'TIPO DTE'=m.tipodte,FECHA=m.fec_e,RUT=convert(varchar,c.rut)+'-'+convert(varchar,c.dig),CLIENTE=TRIM(c.razon), CASE WHEN m.tipodte = 33 then 0 else CONVERT(integer, m.mon_e) end as EXCENTO, CASE WHEN m.tipodte = 34 then 0 WHEN m.tipodte = 61 then 0 else m.net_e end as AFECTO, m.iva_e AS IVA, CONVERT(integer, m.mon_e) AS TOTAL, n.num_fact as FACTURA, a.nombre as 'NOMBRE SERVICIO' " +
+                    using (OdbcCommand cmd = new OdbcCommand("select FOLIO=m.num_e,'TIPO DTE'=m.tipodte,FECHA=m.fec_e,RUT=convert(varchar,c.rut)+'-'+convert(varchar,c.dig),CLIENTE=TRIM(c.razon), CASE WHEN m.tipodte = 33 then 0 else CONVERT(integer, m.mon_e) end as EXENTO, CASE WHEN m.tipodte = 34 then 0 WHEN m.tipodte = 61 then 0 else m.net_e end as AFECTO, m.iva_e AS IVA, CONVERT(integer, m.mon_e) AS TOTAL, n.num_fact as FACTURA, a.nombre as 'NOMBRE SERVICIO' " +
                         "from movi_enc as m join " +
                         "clientes as c on c.rut = m.rut_e " +
                         "left join ncre_fac as n on n.num_ncre = m.num_e and n.tiponc = m.tipodte and n.tiponc= 61 " +
